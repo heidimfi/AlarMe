@@ -1,0 +1,290 @@
+package com.example.ingridstoen.myapplication;
+
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+import android.content.Intent;
+
+public class MainActivity extends AppCompatActivity {
+
+    public static final String EXTRA_USERNAME = "com.example.ingridstoen.myapplication.usernameField";
+    public static final String EXTRA_PASSWORD = "com.example.ingridstoen.myapplication.passwordField";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    public void login(View view) {
+        Intent intent = new Intent(this, CoursesMenu.class);
+        EditText usernameEdit = (EditText) findViewById(R.id.usernameField);
+        EditText passwordEdit = (EditText) findViewById(R.id.passwordField);
+        String username = usernameEdit.getText().toString();
+        String password = passwordEdit.getText().toString();
+        intent.putExtra(EXTRA_USERNAME, username);
+        intent.putExtra(EXTRA_PASSWORD, password);
+        startActivity(intent);
+
+    }
+
+}
+
+package com.example.ingridstoen.myapplication;
+
+/**
+ * Created by ingridstoen on 02.03.2017.
+ */
+
+import android.os.SystemClock;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.Select;
+
+public abstract class LoginProcess {
+
+    public void chooseNTNU(WebDriver driver) {
+        Select objectSelect = new Select(driver.findElement(By.id("org")));
+        objectSelect.selectByValue("ntnu.no");
+        driver.findElement(By.className("submit")).click();
+        SystemClock.sleep(5000);
+    }
+
+    public void chooseNTNUAgain(WebDriver driver) {
+        Select schoolSelect = new Select(driver.findElement(By.id("institusjonsvalg:institusjonsMenu")));
+        schoolSelect.selectByValue("FSNTNU");
+        driver.findElement(By.name("institusjonsvalg:j_idt121")).click();
+        SystemClock.sleep(5000);
+        driver.findElement(By.linkText("Pålogging via Feide")).click();
+        SystemClock.sleep(5000);
+    }
+
+    public void login(String username, String password, WebDriver driver) {
+        WebElement usernameField = driver.findElement(By.name("feidename"));
+        WebElement passwordField = driver.findElement(By.name("password"));
+        usernameField.sendKeys(username);
+        passwordField.sendKeys(password);
+        driver.findElement(By.className("submit")).click();
+        SystemClock.sleep(5000);
+    }
+
+}
+
+package com.example.ingridstoen.myapplication;
+
+import java.util.Scanner;
+
+public class Login {
+    public String username;
+    public String password;
+
+    public Login(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
+    public String getUsername() {
+        return username;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+}
+package com.example.ingridstoen.myapplication;
+
+import android.os.SystemClock;
+
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.chrome.ChromeDriver;
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+
+/**
+ * Created by ingridstoen on 02.03.2017.
+ */
+
+public class Exams extends LoginProcess {
+
+    private HashMap<String, Date> exams = new HashMap<>();
+    private WebDriver driver = new ChromeDriver();
+
+    public Exams(Login login) {
+        addExams(login);
+    }
+
+    public HashMap<String, Date> getExams() {
+        return exams;
+    }
+
+    public void addExams(Login login) {
+        //STUDWEB
+        driver.get("https://idp.feide.no/simplesaml/module.php/feide/login.php?asLen=169&AuthState=_"
+                + "d3cf8da4fdb8785ba65151ba2683aca1150fe3bfc2%3Ahttps%3A%2F%2Fidp.feide.no%2Fsimplesaml%"
+                + "2Fsaml2%2Fidp%2FSSOService.php%3Fspentityid%3Dhttps%253A%252F%252Ffsweb.no"
+                + "%252Fstudentweb%26cookieTime%3D1487768961");
+        SystemClock.sleep(5000);
+
+        //Choose NTNU as the institution
+        chooseNTNU(driver);
+
+        //innlogging med brukerinput
+        login(login.username, login.password, driver);
+
+        //need to choose NTNU as the institution one more time
+        chooseNTNUAgain(driver);
+
+        //adds the exam dates to this.exams as <subject code subject name, date>
+        List<WebElement> datesAndSubjects = driver.findElements(By.className("infoLinje"));
+        for (WebElement element : datesAndSubjects){
+            int index = datesAndSubjects.indexOf(element);
+            if (index == 0 || index % 3 == 0) {
+                try {
+                    DateFormat df = new SimpleDateFormat("mm.dd.yyyy");
+                    Date date = df.parse(element.getText());
+                    String courseCode = datesAndSubjects.get(index + 1).getText();
+                    String courseName = datesAndSubjects.get(index + 2).getText();
+                    this.exams.put(courseCode + " " + courseName, date);
+                }
+                catch(ParseException e) {
+                    e.printStackTrace();
+                }
+
+            }
+
+        }
+
+    }
+
+
+}
+package com.example.ingridstoen.myapplication;
+
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.content.Intent;
+import android.widget.Button;
+import android.widget.TextView;
+
+import java.util.HashMap;
+import java.util.ArrayList;
+
+import java.util.Date;
+import java.util.Set;
+
+public class CoursesMenu extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_courses_menu);
+
+        System.setProperty("webdriver.chrome.driver", "/Users/ingridstoen/Documents/workspace/alarMe/chromedriver.exe");
+        Intent intent = getIntent();
+        String username = intent.getStringExtra(MainActivity.EXTRA_USERNAME);
+        String password = intent.getStringExtra(MainActivity.EXTRA_PASSWORD);
+        Login login = new Login(username, password);
+        HashMap<String, Date> exams = new Exams(login).getExams();
+        ArrayList<String> courseCodes = new ArrayList<>(exams.keySet());
+
+        Button courseCode1 = (Button) findViewById(R.id.courseCode1_button);
+        courseCode1.setText(courseCodes.get(0));
+
+        Button courseCode2 = (Button) findViewById(R.id.courseCode2_button);
+        courseCode2.setText(courseCodes.get(1));
+
+        Button courseCode3 = (Button) findViewById(R.id.courseCode3_button);
+        courseCode3.setText(courseCodes.get(2));
+
+        Button courseCode4 = (Button) findViewById(R.id.courseCode4_button);
+        courseCode4.setText(courseCodes.get(3));
+
+    }
+
+
+}
+package com.example.ingridstoen.myapplication;
+
+import android.os.SystemClock;
+
+import java.text.ParseException;
+import java.util.Date;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.HashMap;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+import org.openqa.selenium.support.ui.Select;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+
+public class Assignments extends LoginProcess {
+
+    ArrayList<String> assignments = new ArrayList<String>();
+    private WebDriver driver = new ChromeDriver();
+
+    //konstruktør
+    public Assignments(Login login) {
+        addAssignments(login);
+    }
+
+    //hent assignments
+    public ArrayList<String> getAssignments() {
+        return assignments;
+    }
+
+    public void addAssignments(Login login) {
+
+        //BLACKBOARD
+        driver.get("https://ntnu.blackboard.com/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_70_1");
+        driver.findElement(By.className("loginPrimary")).click();
+        SystemClock.sleep(5000);
+
+        //Choose NTNU as the institution
+        chooseNTNU(driver);
+
+        //Fill in username and password to log in
+       login(login.username, login.password, driver);
+
+        //klikke inn på "varsler"
+        driver.findElement(By.linkText("Varsler")).click();
+        SystemClock.sleep(5000);
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_4")).click();
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_3")).click();
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_2")).click();
+
+        //hent alle øvinger fra "fremtiden"
+        List<WebElement> assignment_future = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_future) {
+            this.assignments.add(a.getText());
+        }
+
+        //henter alle øvinger fra "imorgen"
+        List<WebElement> assignment_tomorrow = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_tomorrow) {
+            this.assignments.add(a.getText());
+        }
+
+        //henter alle øvinger fra "idag"
+        List<WebElement> assignment_thisweek = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_thisweek){
+            this.assignments.add(a.getText());
+        }
+
+        //ITSLEARNING
+
+    }
+
+}
