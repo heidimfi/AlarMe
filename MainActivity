@@ -1,0 +1,32 @@
+package com.example.ingridstoen.myapplication;
+
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.view.View;
+import android.widget.EditText;
+import android.content.Intent;
+
+public class MainActivity extends AppCompatActivity {
+
+    public static final String EXTRA_USERNAME = "com.example.ingridstoen.myapplication.usernameField";
+    public static final String EXTRA_PASSWORD = "com.example.ingridstoen.myapplication.passwordField";
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_main);
+    }
+
+    public void login(View view) {
+        Intent intent = new Intent(this, CoursesMenu.class);
+        EditText usernameEdit = (EditText) findViewById(R.id.usernameField);
+        EditText passwordEdit = (EditText) findViewById(R.id.passwordField);
+        String username = usernameEdit.getText().toString();
+        String password = passwordEdit.getText().toString();
+        intent.putExtra(EXTRA_USERNAME, username);
+        intent.putExtra(EXTRA_PASSWORD, password);
+        startActivity(intent);
+
+    }
+
+}
