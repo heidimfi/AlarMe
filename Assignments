@@ -1,0 +1,69 @@
+package com.example.ingridstoen.myapplication;
+
+import android.os.SystemClock;
+
+import java.util.ArrayList;
+import java.util.List;
+import org.openqa.selenium.WebDriver;
+import org.openqa.selenium.chrome.ChromeDriver;
+import org.openqa.selenium.By;
+import org.openqa.selenium.WebElement;
+
+public class Assignments extends LoginProcess {
+
+    ArrayList<String> assignments = new ArrayList<String>();
+    private WebDriver driver = new ChromeDriver();
+
+    //konstruktør
+    public Assignments(Login login) {
+        addAssignments(login);
+    }
+
+    //hent assignments
+    public ArrayList<String> getAssignments() {
+        return assignments;
+    }
+
+    public void addAssignments(Login login) {
+
+        //BLACKBOARD
+        driver.get("https://ntnu.blackboard.com/webapps/portal/execute/tabs/tabAction?tab_tab_group_id=_70_1");
+        driver.findElement(By.className("loginPrimary")).click();
+        SystemClock.sleep(5000);
+
+        //Choose NTNU as the institution
+        chooseNTNU(driver);
+
+        //Fill in username and password to log in
+       login(login.username, login.password, driver);
+
+        //klikke inn på "varsler"
+        driver.findElement(By.linkText("Varsler")).click();
+        SystemClock.sleep(5000);
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_4")).click();
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_3")).click();
+        driver.findElement(By.id("headerTextheader::1-dueView::1-dueView_2")).click();
+
+        //hent alle øvinger fra "fremtiden"
+        List<WebElement> assignment_future = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_future) {
+            this.assignments.add(a.getText());
+        }
+
+        //henter alle øvinger fra "imorgen"
+        List<WebElement> assignment_tomorrow = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_tomorrow) {
+            this.assignments.add(a.getText());
+        }
+
+        //henter alle øvinger fra "idag"
+        List<WebElement> assignment_thisweek = driver.findElements(By.className("itemGroups"));
+        for (WebElement a : assignment_thisweek){
+            this.assignments.add(a.getText());
+        }
+
+        //ITSLEARNING
+
+    }
+
+}
