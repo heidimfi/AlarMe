@@ -1,0 +1,41 @@
+package com.example.ingridstoen.myapplication;
+
+import android.support.v7.app.AppCompatActivity;
+import android.os.Bundle;
+import android.content.Intent;
+import android.widget.Button;
+import java.util.HashMap;
+import java.util.ArrayList;
+import java.util.Date;
+
+public class CoursesMenu extends AppCompatActivity {
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.activity_courses_menu);
+
+        System.setProperty("webdriver.chrome.driver", "/Users/ingridstoen/Documents/workspace/alarMe/chromedriver.exe");
+        Intent intent = getIntent();
+        String username = intent.getStringExtra(MainActivity.EXTRA_USERNAME);
+        String password = intent.getStringExtra(MainActivity.EXTRA_PASSWORD);
+        Login login = new Login(username, password);
+        HashMap<String, Date> exams = new Exams(login).getExams();
+        ArrayList<String> courseCodes = new ArrayList<>(exams.keySet());
+
+        Button courseCode1 = (Button) findViewById(R.id.courseCode1_button);
+        courseCode1.setText(courseCodes.get(0));
+
+        Button courseCode2 = (Button) findViewById(R.id.courseCode2_button);
+        courseCode2.setText(courseCodes.get(1));
+
+        Button courseCode3 = (Button) findViewById(R.id.courseCode3_button);
+        courseCode3.setText(courseCodes.get(2));
+
+        Button courseCode4 = (Button) findViewById(R.id.courseCode4_button);
+        courseCode4.setText(courseCodes.get(3));
+
+    }
+
+
+}
