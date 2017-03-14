@@ -1,0 +1,8 @@
+ String server = "sql11.freemysqlhosting.net";
+        String database = "sql11163131";
+        String username = "sql11163131";
+        String password = "wi4gXfVvT3";
+        String connectionString = "jdbc:mysql://" + server + "/" + database +
+                "?user=" + username + "&password=" + password;
+        Connection connection = DriverManager.getConnection(connectionString);
+        Statement statement =connection.createStatement();
